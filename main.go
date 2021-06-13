@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"log"
-	"sync"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/currantlabs/ble/linux"
 )
@@ -14,6 +16,17 @@ var (
 
 func main() {
 	flag.Parse()
+
+	sigs := make(chan os.Signal, 1)
+	done := make(chan bool, 1)
+
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-sigs
+		log.Printf("[main] Received signal: %s", sig)
+		done <- true
+	}()
 
 	log.Print("[main] Reading configuration")
 	config, err := NewConfig(*configFile)
@@ -42,25 +55,20 @@ func main() {
 
 		log.Printf("[main:%s] Registering handler", device.Name)
 		device.RegisterHandler(config.MQTT)
-
+		log.Printf("device.Client=%+v\n", device.Client)
 	}
 
-	// Loop forever while notification handler respond
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	for {
-		wg.Wait()
+	// Wait for signal while notification handler respond
+	log.Printf("[main] Main goroutine waiting for signal")
+	<-done
+
+	for _, device := range config.Devices {
+		log.Printf("[main:%s] Disconnecting", device.Name)
+		if err := device.Disconnect(); err != nil {
+			log.Printf("[main:%s] Failed to disconnect from device", device.Name)
+		}
 	}
 
-	// for _, device := range config.Devices {
-	// 	if err := device.Disconnect(); err != nil {
-	// 		log.Printf("[main:%s] Failed to disconnect from device", device.Name)
-	// 		continue
-	// 	}
-
-	// }
-
-	// log.Print("[main] Stopping Linux Device")
-	// config.Host.Stop()
-
+	log.Print("[main] Stopping Linux Device")
+	config.Host.Stop()
 }

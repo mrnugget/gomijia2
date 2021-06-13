@@ -11,7 +11,7 @@ import (
 // Config represents a configuration
 type Config struct {
 	MQTT    MQTT
-	Devices []Device
+	Devices []*Device
 	Host    *linux.Device
 }
 
@@ -49,11 +49,11 @@ func NewConfig(file string) (*Config, error) {
 	}
 	names := sec.KeyStrings()
 
-	devices := []Device{}
+	devices := []*Device{}
 	for i, name := range names {
 		addr := sec.Key(name).String()
 		log.Printf("[Config] Device %02d: %s (%s)", i, name, addr)
-		devices = append(devices, Device{
+		devices = append(devices, &Device{
 			Name: name,
 			Addr: addr,
 		})

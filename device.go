@@ -36,6 +36,9 @@ func (d *Device) Connect(host *linux.Device) (err error) {
 
 // Disconnect from a Device
 func (d *Device) Disconnect() error {
+	if d.Client == nil {
+		return nil
+	}
 	return d.Client.CancelConnection()
 }
 
