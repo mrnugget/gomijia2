@@ -47,6 +47,13 @@ func (m *MQTT) Connect(id string) error {
 	if token := m.Client.Connect(); token.Wait() && token.Error() != nil {
 		return (token.Error())
 	}
+	log.Print("[MQTT] Connected!")
+
+	t := m.Client.Publish("testTopic", 0, false, "test value")
+	_ = t.Wait() // Can also use '<-t.Done()' in releases > 1.2.0
+	if t.Error() != nil {
+		log.Printf("failed to publish test topic: %s", t.Error()) // Use your preferred logging technique (or just fmt.Printf)
+	}
 	return nil
 }
 

@@ -40,8 +40,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("[main] MQTT broker: %s", config.MQTT.Server())
-	if err := config.MQTT.Connect("xiaomi"); err != nil {
+	hostname, err := os.Hostname()
+	if err != nil {
+		panic(err)
+	}
+	log.Printf("[main] MQTT broker: %s. Connecting as %s", config.MQTT.Server(), hostname)
+
+	if err := config.MQTT.Connect(hostname); err != nil {
 		log.Print("[main] Unable to connect to MQTT broker")
 	}
 
@@ -55,7 +60,6 @@ func main() {
 
 		log.Printf("[main:%s] Registering handler", device.Name)
 		device.RegisterHandler(config.MQTT)
-		log.Printf("device.Client=%+v\n", device.Client)
 	}
 
 	// Wait for signal while notification handler respond
